@@ -13,9 +13,10 @@
 # role in the project
 #
 ###################################################
-
+import os
 import gitlab
 import optparse
+import requests
 
 usage = "usage: %prog [options]"
 parser = optparse.OptionParser(usage=usage)
@@ -36,6 +37,12 @@ project_id = options.project_id
 gl = gitlab.Gitlab('https://gitlab-csd.datacenter.uoc.gr', private_token=token)
 gl.auth()
 
+headers = {'PRIVATE-TOKEN': token}
+r = requests.post('https://gitlab-csd.datacenter.uoc.gr/api/v4/groups/1525/access_requests', headers=headers)
+if (r.status_code == 201):
+    print("Access to group requested succesfully")
+else:
+    print("You have already requested access to group")
 project = gl.projects.get(project_id)
 
 # Change visibility of forked projects from public to private
