@@ -14,7 +14,7 @@ int main(){
         fputc('s',data6);
         fputc('i',data6);
         fputc('s',data6);
-        fputc('-',data6);
+        fputc(' ',data6);
         fputc('X',data6);
         fputc('a',data6);
         fputc('n',data6);
