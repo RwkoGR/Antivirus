@@ -30,6 +30,13 @@ enum result{
     Malware
 };
 
+enum actions{
+    OPENED,
+    CREATED,
+    MODIFIED,
+    DELETED
+};
+
 
 struct node_1{
     char *path;
@@ -46,7 +53,15 @@ struct node_2{
     struct node_2 *next;
 };
 
+struct node_3{
+    char *filename;
+    enum actions action;
+    struct node_3 *next;
+};
+
 void add_node_list_1(const char *path, enum report reason);
 void add_node_list_2(const char *path, const char *file, const char *domain, int is_exec, enum result result);
+void add_node_list_3(const char *filename, enum actions action);
 void print_list_1();
 void print_list_2();
+void print_list_3();

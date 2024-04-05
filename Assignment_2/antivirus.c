@@ -2,6 +2,7 @@
 
 struct node_1 *head_1;
 struct node_2 *head_2;
+struct node_3 *head_3;
 
 const char* reports[] = {
     "REPORTED_MD5_HASH",
@@ -13,6 +14,13 @@ const char* reports[] = {
 const char* result[] ={
     "Safe",
     "Malware"
+};
+
+const char* actions[] ={
+    "OPENED",
+    "CREATED",
+    "MODIFIED",
+    "DELETED"
 };
 
 void add_node_list_1(const char *path, enum report reason){
@@ -40,6 +48,27 @@ void add_node_list_2(const char *path, const char *file, const char *domain, int
     head_2 = new_node;
 }
 
+void add_node_list_3(const char *filename, enum actions action){
+    struct node_3 *new_node = (struct node_3 *)malloc(sizeof(struct node_3));
+    if(!new_node) exit(0);
+    new_node->filename = (char *)malloc(strlen(filename) + 1);
+    new_node->next = NULL;
+    strcpy(new_node->filename, filename);
+    new_node->action = action;
+    struct node_3 *cur;
+    if(head_3 == NULL){
+        head_3 = new_node;
+        return;
+    }
+    cur = head_3;
+
+    while(cur->next != NULL){
+        cur = cur->next;
+    }
+
+    cur->next = new_node;
+}
+
 void print_list_1(){
     struct node_1 *current = head_1;
     while(current){
@@ -59,6 +88,14 @@ void print_list_2(){
     }
 }
 
+void print_list_3(){
+    struct node_3 *current = head_3;
+    while(current){
+        printf("File: %s | Action: %s \n",current->filename, actions[current->action]);
+        current = current->next;
+    }
+}
+
 
 size_t write_callback(void *ptr, size_t size, size_t nmemb, void *userdata) {
     strcat(userdata, ptr);
@@ -71,6 +108,51 @@ void remove_substring(char *str, const char *sub) {
         size_t sub_len = strlen(sub);
         memmove(match, match + sub_len, strlen(match + sub_len) + 1); // Include the null terminator
     }
+}
+
+int check_for_pattern(char *name){
+    struct node_3 *current = head_3;
+    int pattern = 0;
+    int opened_flag = 0, created_flag = 0, modified_flag = 0, deleted_flag = 0;
+    char *locked_name = malloc(strlen(name) + 8);    //7 for .locked + 1 for \0
+    strcpy(locked_name,name);
+    strcat(locked_name,".locked");
+    while(current){
+        if(current->action == OPENED && !strcmp(current->filename, name)){
+            printf("\t 1 \n");
+            opened_flag = 1;
+            created_flag = 0;
+            modified_flag = 0;
+            deleted_flag = 0;
+        }
+        else if(current->action == CREATED && opened_flag == 1 && !strcmp(current->filename, locked_name)){
+            printf("\t 2 \n");
+            opened_flag = 0;
+            created_flag = 1;
+            modified_flag = 0;
+            deleted_flag = 0;
+        }
+        else if(current->action == MODIFIED && created_flag == 1 && !strcmp(current->filename, locked_name)){
+            printf("\t 3 \n");
+            opened_flag = 0;
+            created_flag = 0;
+            modified_flag = 1;
+            deleted_flag = 0;
+        }
+        else if(current->action == DELETED && modified_flag == 1 && !strcmp(current->filename, name)){
+            printf("\t 4 \n");
+            opened_flag = 0;
+            created_flag = 0;
+            modified_flag = 0;
+            deleted_flag = 1;
+        }
+
+        if(deleted_flag == 1)
+            return 1;
+
+        current = current->next;
+    }
+    return 0;
 }
 
 #define BUF_LEN 1000 * (sizeof(struct inotify_event) + NAME_MAX + 1)
@@ -110,10 +192,24 @@ void monitor_dir(const char *dir_name){
                 printf("\n\nInotify events:\n");
                 for (char *ptr = buffer; ptr < buffer + num_bytes; ptr += sizeof(struct inotify_event) + event->len) {
                     event = (struct inotify_event *) ptr;
-                    if(event->mask & IN_OPEN){printf("OPEN\n");}
-                    if(event->mask & IN_CREATE){printf("CREATE\n");}
-                    if(event->mask & IN_MODIFY){printf("MODIFY\n");}
-                    if(event->mask & IN_DELETE){printf("DELETE\n");}
+                    if(event->mask & IN_OPEN){
+                        printf("1\n");
+                        add_node_list_3(event->name, OPENED);
+                        printf("OPEN\n");
+                    }
+                    if(event->mask & IN_CREATE){
+                        add_node_list_3(event->name, CREATED);
+                        printf("CREATE\n");
+                    }
+                    if(event->mask & IN_MODIFY){
+                        add_node_list_3(event->name, MODIFIED);
+                        printf("MODIFY\n");
+                    }
+                    if(event->mask & IN_DELETE){
+                        add_node_list_3(event->name, DELETED);
+                        printf("DELETE\n");
+                        if(check_for_pattern(event->name) == 1) printf("[WARN] Ransomware attack detected on file %s\n",event->name);
+                    }
                     if (event->len)
                        printf("%s\n", event->name);
                     if (event->mask & IN_ISDIR)
@@ -123,8 +219,10 @@ void monitor_dir(const char *dir_name){
                 }
             }
         }
+        printf("PRINT:\n\n\n");
+        print_list_3();
     }
-
+    
     // Clean up
     inotify_rm_watch(inotify_fd,watch_fd);
     close(inotify_fd);
