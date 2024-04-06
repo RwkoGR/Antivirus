@@ -119,28 +119,24 @@ int check_for_pattern(char *name){
     strcat(locked_name,".locked");
     while(current){
         if(current->action == OPENED && !strcmp(current->filename, name)){
-            printf("\t 1 \n");
             opened_flag = 1;
             created_flag = 0;
             modified_flag = 0;
             deleted_flag = 0;
         }
         else if(current->action == CREATED && opened_flag == 1 && !strcmp(current->filename, locked_name)){
-            printf("\t 2 \n");
             opened_flag = 0;
             created_flag = 1;
             modified_flag = 0;
             deleted_flag = 0;
         }
         else if(current->action == MODIFIED && created_flag == 1 && !strcmp(current->filename, locked_name)){
-            printf("\t 3 \n");
             opened_flag = 0;
             created_flag = 0;
             modified_flag = 1;
             deleted_flag = 0;
         }
         else if(current->action == DELETED && modified_flag == 1 && !strcmp(current->filename, name)){
-            printf("\t 4 \n");
             opened_flag = 0;
             created_flag = 0;
             modified_flag = 0;
@@ -189,38 +185,37 @@ void monitor_dir(const char *dir_name){
                     exit(EXIT_FAILURE);
                 }
 
-                printf("\n\nInotify events:\n");
                 for (char *ptr = buffer; ptr < buffer + num_bytes; ptr += sizeof(struct inotify_event) + event->len) {
                     event = (struct inotify_event *) ptr;
-                    if(event->mask & IN_OPEN){
-                        printf("1\n");
+                    if(event->mask & IN_OPEN && !(event->mask & IN_ISDIR)){
                         add_node_list_3(event->name, OPENED);
-                        printf("OPEN\n");
+                        printf("File \'%s\' was opened\n", event->name);
                     }
-                    if(event->mask & IN_CREATE){
+                    if(event->mask & IN_CREATE && !(event->mask & IN_ISDIR)){
                         add_node_list_3(event->name, CREATED);
-                        printf("CREATE\n");
+                        printf("File \'%s\' was created\n", event->name);
                     }
-                    if(event->mask & IN_MODIFY){
+                    if(event->mask & IN_MODIFY && !(event->mask & IN_ISDIR)){
                         add_node_list_3(event->name, MODIFIED);
-                        printf("MODIFY\n");
+                        printf("File \'%s\' was modified\n", event->name);
                     }
-                    if(event->mask & IN_DELETE){
+                    if(event->mask & IN_DELETE && !(event->mask & IN_ISDIR)){
                         add_node_list_3(event->name, DELETED);
-                        printf("DELETE\n");
+                        printf("File \'%s\' was deleted\n", event->name);
                         if(check_for_pattern(event->name) == 1) printf("[WARN] Ransomware attack detected on file %s\n",event->name);
                     }
-                    if (event->len)
-                       printf("%s\n", event->name);
-                    if (event->mask & IN_ISDIR)
-                       printf(" [directory]\n");
-                    else
-                       printf(" [file]\n");
+                    if(event->mask & IN_CLOSE_WRITE && !(event->mask & IN_ISDIR)){
+                        printf("File \'%s\' that was opened for writing was closed\n", event->name);
+                    }
+                    if(event->mask & IN_CLOSE_NOWRITE && !(event->mask & IN_ISDIR)){
+                        printf("File \'%s\' that was not opened for writing was closed\n", event->name);
+                    }
+                    if(event->mask & IN_ACCESS && !(event->mask & IN_ISDIR)){
+                        printf("File \'%s\' was accessed\n", event->name);
+                    }
                 }
             }
         }
-        printf("PRINT:\n\n\n");
-        print_list_3();
     }
     
     // Clean up
