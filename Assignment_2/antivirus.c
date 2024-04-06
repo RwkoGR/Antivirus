@@ -187,30 +187,30 @@ void monitor_dir(const char *dir_name){
 
                 for (char *ptr = buffer; ptr < buffer + num_bytes; ptr += sizeof(struct inotify_event) + event->len) {
                     event = (struct inotify_event *) ptr;
-                    if(event->mask & IN_OPEN && !(event->mask & IN_ISDIR)){
+                    if(event->mask & IN_OPEN){
                         add_node_list_3(event->name, OPENED);
                         printf("File \'%s\' was opened\n", event->name);
                     }
-                    if(event->mask & IN_CREATE && !(event->mask & IN_ISDIR)){
+                    if(event->mask & IN_CREATE){
                         add_node_list_3(event->name, CREATED);
                         printf("File \'%s\' was created\n", event->name);
                     }
-                    if(event->mask & IN_MODIFY && !(event->mask & IN_ISDIR)){
+                    if(event->mask & IN_MODIFY){
                         add_node_list_3(event->name, MODIFIED);
                         printf("File \'%s\' was modified\n", event->name);
                     }
-                    if(event->mask & IN_DELETE && !(event->mask & IN_ISDIR)){
+                    if(event->mask & IN_DELETE){
                         add_node_list_3(event->name, DELETED);
                         printf("File \'%s\' was deleted\n", event->name);
                         if(check_for_pattern(event->name) == 1) printf("[WARN] Ransomware attack detected on file %s\n",event->name);
                     }
-                    if(event->mask & IN_CLOSE_WRITE && !(event->mask & IN_ISDIR)){
+                    if(event->mask & IN_CLOSE_WRITE){
                         printf("File \'%s\' that was opened for writing was closed\n", event->name);
                     }
-                    if(event->mask & IN_CLOSE_NOWRITE && !(event->mask & IN_ISDIR)){
+                    if(event->mask & IN_CLOSE_NOWRITE){
                         printf("File \'%s\' that was not opened for writing was closed\n", event->name);
                     }
-                    if(event->mask & IN_ACCESS && !(event->mask & IN_ISDIR)){
+                    if(event->mask & IN_ACCESS){
                         printf("File \'%s\' was accessed\n", event->name);
                     }
                 }
