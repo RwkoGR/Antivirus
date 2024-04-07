@@ -1,0 +1,81 @@
+#############################################################
+#           Assigment 2 Antivirus                           #
+#                                                           #
+#           Name:Athanasios Ioannis Xanthopoulos:           #
+#           Date: 07-04-2024                                #
+#           A.M.: 4702                                      #
+#           File: README                                    #
+#                                                           #
+#############################################################
+
+For this assignment every exercise has been completed successfully and is (hopefully) working as expected.
+
+How to run:
+    In order to run the antivirus program you have to be in the folder with
+    the makefile (Assignment_2), after that you have to run:
+        "make"
+    so that the compilation is done correctly. To continue you can run the program in two ways:
+
+    (1) Manually: 
+        by running the command:
+            "./antivirus" [mode] [path/number/list_of_points]
+
+        where:
+            [mode]: 
+                - 1: "scan" a directory for bitcoin wallets, virus signatures and malicious file signatures.
+                - 2: "inspect" a directory for malicious websites that a file might be trying to communicate with.
+                - 3: "monitor" a directoyr for ransomware activity.
+                - 4: "slice" a key into 10 different points.
+                - 5: "unlock" the secret key using atleast 3 of the different points given from slice.
+                
+            [path]: 
+                - path to the directory to be scanned/inspected/monitored.
+
+            [number]:
+                - secret key to slice.
+
+            [list_of_points]:
+                - list of points to unlock the secret key. Correct usage is:
+                    "(p1,p2)" "(p3,p4)"..."(p5,p6)".
+
+    (2) Automatically:
+        by running the command:
+            "make run_all" (NOT ADVISED)
+        It is NOT advised to run the above command since it will show buggy results in the console because monitor is a blocking algorithm,
+        even though it runs perfectly fine. Instead run:
+            "make run_all_but_monitor"
+        And then, when monitor has finished its execution, run:
+            "make run_ransomware_attack"
+        
+
+
+After running those commands you will have to clean the test files so that you can run monitor again.
+You can do it by running:
+    "make clean"
+This cleans all the files created by the program and resets the Test directory to its initial testing state.
+
+
+YARA rule example for KozaliBear ransomware:
+
+    rule KozaliBear_Ransomware {
+        meta:
+            description = "Detects KozaliBear ransomware attack characteristics"
+        strings:
+            $malicious_library_md5 = "85 57 8C D4 40 4C 6D 58 6C D0 AE 1B 36 C9 8A CA"
+            $malicious_library_sha256 = "D5 6D 67 F2 C4 34 11 D9 66 52 5B 32 50 BF AA 1A 85 DB 34 BF 37 14 68 DF 1B 6A 98 82 FE E7 88 49"
+            $bitcoin_wallet = "bc1qa5wkgaew2dkv56kfvj49j0av5nml45x9ek9hz6"
+            $old_virus_signature = { 98 1D 00 00 EC 33 FF FF FB 06 00 00 00 46 0E 10 }
+            $file_extension = ".locked"
+            $malware_distribution_platforms = "http://www.biawwer.com"
+        condition:
+            any of ($malicious_library_md5, $malicious_library_sha256) or
+            $bitcoin_wallet or
+            $old_virus_signature or
+            $file_extension or
+            $malware_distribution_platforms
+    }
+
+The YARA rule above must be stored in a .yar file inside of "arya/example_rules/[file.yar]" directory.
+
+Script to run arya from inside the arya directory:
+    python3 src/arya.py -i example_rules/ -o MalwareAryaDefault.exe

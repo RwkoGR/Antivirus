@@ -4,6 +4,8 @@ struct node_1 *head_1;
 struct node_2 *head_2;
 struct node_3 *head_3;
 
+
+
 const char* reports[] = {
     "REPORTED_MD5_HASH",
     "REPORTED_SH256_HASH",
@@ -96,6 +98,107 @@ void print_list_3(){
     }
 }
 
+// Function to calculate determinant of 3x3 matrix
+int determinant(int mat[3][3]) {
+    return (mat[0][0] * (mat[1][1] * mat[2][2] - mat[1][2] * mat[2][1])) -
+           (mat[0][1] * (mat[1][0] * mat[2][2] - mat[1][2] * mat[2][0])) +
+           (mat[0][2] * (mat[1][0] * mat[2][1] - mat[1][1] * mat[2][0]));
+}
+
+// Function to solve system of 3 equations using Cramer's Rule
+int solve_system(int eqn1[3], int eqn2[3], int eqn3[3]) {
+    int det, det_x, det_y, det_z;
+    int mat[3][3] = {
+        {eqn1[0], eqn1[1], eqn1[2]},
+        {eqn2[0], eqn2[1], eqn2[2]},
+        {eqn3[0], eqn3[1], eqn3[2]}
+    };
+
+    // Calculate determinant of coefficient matrix
+    det = determinant(mat);
+
+    // Check if determinant is non-zero
+    if (det != 0) {
+        // Calculate determinants for x, y, and z
+        int mat_x[3][3] = {
+            {eqn1[3], eqn1[1], eqn1[2]},
+            {eqn2[3], eqn2[1], eqn2[2]},
+            {eqn3[3], eqn3[1], eqn3[2]}
+        };
+        det_x = determinant(mat_x);
+
+        int mat_y[3][3] = {
+            {eqn1[0], eqn1[3], eqn1[2]},
+            {eqn2[0], eqn2[3], eqn2[2]},
+            {eqn3[0], eqn3[3], eqn3[2]}
+        };
+        det_y = determinant(mat_y);
+
+        int mat_z[3][3] = {
+            {eqn1[0], eqn1[1], eqn1[3]},
+            {eqn2[0], eqn2[1], eqn2[3]},
+            {eqn3[0], eqn3[1], eqn3[3]}
+        };
+        det_z = determinant(mat_z);
+
+        // Calculate solutions for x, y, and z
+        float x = (float) det_x / det;
+        float y = (float) det_y / det;
+        float z = (float) det_z / det;
+
+        // Print solutions
+        printf("[INFO] [9046] [14-Mar-24 13:53:44] Computed that a=%d and b=%d\n",(int)x,(int)y);
+        return (int)z;
+    } else {
+        // If determinant is zero, system has no unique solution
+        printf("System of equations has no unique solution\n");
+        return 0;
+    }
+}
+
+
+void unlock(Point shares[]){
+    int prime = PRIME;
+    srand(time(NULL));
+    int a = rand() % prime;
+    int b = rand() % prime;
+   
+
+    int eqn1[] = {shares[0].x * shares[0].x, shares[0].x, 1, shares[0].y};  // Coefficients of first equation (ax + by + cz = d)
+    int eqn2[] = {shares[1].x * shares[1].x, shares[1].x, 1, shares[1].y}; // Coefficients of second equation
+    int eqn3[] = {shares[2].x * shares[2].x, shares[2].x, 1, shares[2].y}; // Coefficients of third equation
+
+    int key = solve_system(eqn1, eqn2, eqn3);
+
+    printf("[INFO] [9046] [14-Mar-24 13:53:44] Encryption key is: %d\n",key);
+}
+
+
+void slice(int key){
+    int shares = MAX_SHARES;
+    int minimum_shares_req = MIN_SHARES_REQUIRED;
+    int prime = PRIME;
+
+    srand(time(NULL));
+    int a = rand() % prime;
+    int b = rand() % prime;
+    
+    int f;
+
+    Point* points = (Point*)malloc(shares * sizeof(Point));
+    for(int i = 1 ; i <= shares ; i++){
+        f = a * (i * i) + b * i + key;
+        points[i-1].x = i;
+        points[i-1].y = f;
+    }
+
+    for (int i = 0; i < shares; i++) {
+        printf("(%d, %d)\n", points[i].x, points[i].y);
+    }
+
+    free(points);
+}
+
 
 size_t write_callback(void *ptr, size_t size, size_t nmemb, void *userdata) {
     strcat(userdata, ptr);
@@ -151,7 +254,6 @@ int check_for_pattern(char *name){
     return 0;
 }
 
-#define BUF_LEN 1000 * (sizeof(struct inotify_event) + NAME_MAX + 1)
 void monitor_dir(const char *dir_name){
     int inotify_fd, watch_fd, poll_result;
     struct inotify_event *event;
@@ -311,7 +413,7 @@ int find_web_addr(const char *path){
     char msgbuf[100];
     char domain[512];
     // Compile the regular expression
-    res = regcomp(&regex, "((https?:\\/\\/(www.)?|www.)(\\w|\\d|\\.\\w|\\-|\\/|\\?)+)", REG_EXTENDED);
+    res = regcomp(&regex, "((https?:\\/\\/(www.)?|www.)(\\w|\\d|\\.\\w|\\-|\\/|\\?|\\:)+)", REG_EXTENDED);
     if (res) {
         fprintf(stderr, "Could not compile regex\n");
         return -1;
@@ -323,17 +425,18 @@ int find_web_addr(const char *path){
         return -1;
     }
 
-    char buffer[10000 + 1];
+    char buffer[1000 + 1];
     int len = 0;
+    int eof_encountered = 0;
 
     int c;
     while ((c = fgetc(file)) != EOF) {
         if (is_readable_char(c)) {
-            if (len < 10000) {
+            if (len < 1000) {
                 buffer[len++] = c;
             }
         } else {
-            if (len > 5) {
+            if (len > 10) {
                 buffer[len] = '\0';
                 // Execute the regular expression
                 res = regexec(&regex, buffer, 2, match, 0);
@@ -347,6 +450,23 @@ int find_web_addr(const char *path){
                 }
             }
             len = 0; // Reset the length for the next string
+        }
+    }
+    // Check for EOF
+    if (c == EOF && !eof_encountered) {
+        eof_encountered = 1;
+        if (len > 10) {
+            buffer[len] = '\0';
+            // Execute the regular expression
+            res = regexec(&regex, buffer, 2, match, 0);
+            if (!res) {
+                snprintf(domain, sizeof(domain), "%.*s", (match[0].rm_eo - match[0].rm_so), buffer + match[0].rm_so);
+                check_for_malicious_domain(path, domain);
+            } else if (res != REG_NOMATCH) {
+                fprintf(stderr, "Regex match failed: %s\n", msgbuf);
+                regerror(res, &regex, msgbuf, sizeof(msgbuf));
+                return -1;
+            }
         }
     }
 
@@ -709,8 +829,35 @@ int main(int argc, char **argv){
 
         monitor_dir(argv[2]);
     }
-    else if(!strcmp(argv[1],"slice")){}
-    else if(!strcmp(argv[1],"unlock")){}
+    else if(!strcmp(argv[1],"slice")){
+        printf("[INFO] [%d] [%s] Application Started\n",pid ,time_str);
+        printf("[INFO] [%d] [%s] Generating shares for key \'%s\'\n",pid ,time_str,argv[2]);
+        slice(atoi(argv[2]));
+    }
+    else if(!strcmp(argv[1],"unlock")){
+        printf("[INFO] [%d] [%s] Application Started\n",pid ,time_str);
+        int given_shares = argc - 2;
+        if(given_shares < MIN_SHARES_REQUIRED){
+            printf("[ERROR] [%d] [%s] Insufficient shares provided\n",pid ,time_str);
+            return 0;
+        }
+        else if(given_shares > MAX_SHARES){
+            printf("[ERROR] [%d] [%s] Too many shares provided\n",pid ,time_str);
+            return 0;
+        }
 
+        printf("[INFO] [%d] [%s] Received %d different shares\n", pid, time_str, given_shares);
+        Point shares[MIN_SHARES_REQUIRED];
+        for (int i = 0; i < 3; i++) {
+            int x, y;
+            sscanf(argv[i + 2], "(%d,%d)", &x, &y);
+            shares[i].x = x;
+            shares[i].y = y;
+        }
+
+        unlock(shares);
+    }
+
+    printf("\n\n--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n\n\n\n");
     return 0;
 }

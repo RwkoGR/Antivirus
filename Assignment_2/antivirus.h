@@ -13,7 +13,19 @@
 #include <sys/inotify.h>
 #include <poll.h>
 #include <errno.h>
+#include <time.h>
+
+
+//1,2
 #define BUFFER_SIZE 4096
+
+//3
+#define BUF_LEN 1000 * (sizeof(struct inotify_event) + NAME_MAX + 1)
+
+//4
+#define MAX_SHARES 10
+#define MIN_SHARES_REQUIRED 3
+#define PRIME 401
 
 int files_scanned;
 int malicious_files_count;
@@ -58,6 +70,14 @@ struct node_3{
     enum actions action;
     struct node_3 *next;
 };
+
+
+
+typedef struct {
+    int x;
+    int y;
+} Point;
+
 
 void add_node_list_1(const char *path, enum report reason);
 void add_node_list_2(const char *path, const char *file, const char *domain, int is_exec, enum result result);
