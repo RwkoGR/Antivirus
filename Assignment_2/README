@@ -24,7 +24,7 @@ How to run:
             [mode]: 
                 - 1: "scan" a directory for bitcoin wallets, virus signatures and malicious file signatures.
                 - 2: "inspect" a directory for malicious websites that a file might be trying to communicate with.
-                - 3: "monitor" a directoyr for ransomware activity.
+                - 3: "monitor" a directory for ransomware activity.
                 - 4: "slice" a key into 10 different points.
                 - 5: "unlock" the secret key using atleast 3 of the different points given from slice.
                 
@@ -44,7 +44,7 @@ How to run:
         It is NOT advised to run the above command since it will show buggy results in the console because monitor is a blocking algorithm,
         even though it runs perfectly fine. Instead run:
             "make run_all_but_monitor"
-        And then, when monitor has finished its execution, run:
+        And then, run:
             "make run_ransomware_attack"
         
 
